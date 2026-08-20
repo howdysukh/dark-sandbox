@@ -1,0 +1,578 @@
+🖤 DarkTalk — Phase 1: Grammar Design
+Absolutely. No coding yet. We're going to design the language as if we're writing the specification for a real language.
+Our target is:
+DarkTalk is a declarative application-development language that lets developers describe application structure, behavior, APIs, workflows, web interactions, and AI capabilities, which the Dark compiler translates into executable JavaScript services.
+
+And the most important rule for tonight:
+If something feels clever but makes DarkTalk harder to understand, we don't add it.
+
+1. First: the grammar philosophy
+I want DarkTalk to have three layers of syntax.
+Layer A — Application declaration
+What exists?
+app Shop
+
+data Product {
+    name: text
+    price: number
+}
+Layer B — Behavior
+What does it do?
+action purchase(product, quantity) {
+    ...
+}
+Layer C — Capabilities
+What can it interact with?
+web ...
+ai ...
+api ...
+This keeps the language mentally predictable.
+2. The basic structure
+A .app.talk file begins with:
+app Shop
+Then declarations follow.
+Example:
+app Shop
+
+data Product {
+    name: text
+    price: number
+    stock: number
+}
+
+data Order {
+    product: Product
+    quantity: number
+}
+
+action purchase(product, quantity) {
+    ...
+}
+No unnecessary wrapper:
+app Shop {
+    ...
+}
+I prefer the first version because the file itself is the application definition.
+3. Comments
+Let's keep comments familiar.
+// This is a comment
+
+/*
+   This is a
+   multi-line comment
+*/
+Nothing clever here.
+4. Types
+We need a small but useful type system.
+Primitive types
+text
+number
+boolean
+date
+datetime
+url
+email
+file
+And:
+null
+Collections
+tags: text[]
+prices: number[]
+Eventually:
+products: Product[]
+Objects
+Custom objects are created with data.
+data Address {
+    street: text
+    city: text
+    country: text
+}
+Then:
+data User {
+    name: text
+    address: Address
+}
+5. Variables
+Inside logic:
+name = "Sukh"
+price = 4999
+active = true
+Typed variables can optionally be explicit:
+name: text = "Sukh"
+I recommend type inference by default.
+So:
+price = 4999
+is enough.
+But:
+price: number = 4999
+is valid when you want explicit typing.
+6. Immutable values
+We'll eventually want:
+const TAX = 0.18
+But I'd keep this for the first compiler version.
+7. Operators
+Standard operators:
++
+-
+*
+/
+%
+==
+!=
+>
+<
+>=
+<=
+&&
+||
+!
+Assignment:
+price = 5000
+Mutation:
+price += 500
+price -= 100
+8. Conditions
+Very familiar:
+if price > 1000 {
+    discount = 10
+} else {
+    discount = 0
+}
+Multiple branches:
+if stock == 0 {
+
+} else if stock < 10 {
+
+} else {
+
+}
+I do not want weird custom syntax here.
+Developers already know this.
+9. Loops
+for
+for product in products {
+    print(product.name)
+}
+while
+while count < 10 {
+    count += 1
+}
+repeat
+Potentially:
+repeat 5 {
+    print("hello")
+}
+This is convenient, but I'd mark it v0.2 unless we need it.
+10. Functions / Actions
+Here's an important distinction.
+I don't think we should call everything a function.
+DarkTalk is application-oriented.
+So:
+action
+Means:
+Something the application can do.
+
+action purchase(product, quantity) {
+
+    total = product.price * quantity
+
+    return total
+}
+This can compile into a normal JavaScript function.
+11. Return values
+action calculateTotal(price, quantity) {
+
+    return price * quantity
+}
+Optional return typing:
+action calculateTotal(price: number, quantity: number): number {
+    return price * quantity
+}
+Again:
+inference first, explicit typing when desired.
+12. Failure / errors
+I like:
+fail "Product is out of stock"
+Then:
+try {
+
+    purchase()
+
+} catch error {
+
+    print(error)
+}
+This gives us a clean semantic distinction:
+return → successful result
+fail   → unsuccessful operation
+13. Data
+This is one of DarkTalk's most important concepts.
+data Product {
+
+    name: text
+    price: number
+    stock: number
+}
+Relationships:
+data Order {
+
+    customer: User
+    product: Product
+    quantity: number
+}
+Array relationship:
+data User {
+
+    name: text
+    orders: Order[]
+}
+14. Data constraints
+We eventually need:
+data Product {
+
+    name: text required
+    price: number min 0
+    stock: number min 0
+}
+This is VERY powerful because Dark can generate validation.
+For example:
+price: number min 0
+could become JavaScript validation automatically.
+But I'd put advanced constraints into v0.2.
+For v0.1:
+name: text
+price: number
+stock: number
+15. Users
+Here's where we need to be careful.
+I don't want:
+user Customer
+to magically mean "Dark owns authentication."
+Instead, it means:
+This application has a user/entity concept.
+
+So:
+user Customer {
+
+    name: text
+    email: email
+}
+Potentially:
+user Admin {
+
+    permissions: text[]
+}
+Later we can define authentication providers.
+16. API
+Now we're getting into application infrastructure.
+Basic API:
+api products {
+
+    GET /products {
+        return Product[]
+    }
+}
+Specific endpoint:
+api products {
+
+    GET /products/:id {
+
+        product = Product.find(id)
+
+        return product
+    }
+}
+Creating:
+POST /products {
+
+    product = Product.create(body)
+
+    return product
+}
+This is where DarkTalk starts generating actual Node.js routes.
+17. Events
+Events describe:
+Something happened.
+
+Example:
+event order.created
+Then:
+when order.created {
+
+    notify(order.customer)
+}
+This is much cleaner than:
+event order.created {
+
+}
+I prefer:
+when order.created {
+
+}
+because the developer is describing behavior.
+18. Tasks
+Tasks describe:
+Something should happen automatically.
+
+Example:
+task priceMonitor {
+
+    every 1 hour {
+
+        checkPrices()
+    }
+}
+This becomes a scheduled Node.js job.
+Later:
+every monday at 09:00
+etc.
+19. Web
+Now our special Dark capability.
+We need two distinct concepts.
+Fetch
+page = web.fetch("https://example.com")
+Search
+results = web.search("RTX 5070 laptop India")
+Open
+Potentially:
+page = web.open(url)
+But I think we should distinguish:
+fetch = retrieve
+open  = interactive page
+So:
+response = await web.fetch(url)
+page = await web.open(url)
+20. Extract
+This is where Dark becomes special.
+Basic:
+price = web.extract(page, ".price")
+But we can make it much nicer:
+product = web.extract(page) {
+
+    name: text
+    price: number
+    availability: boolean
+}
+🔥
+This is a DarkTalk-native semantic extraction operation.
+The runtime can use:
+DOM parsing
+selectors
+structured data
+AI
+depending on what is available.
+21. AI
+We shouldn't make AI syntax complicated.
+Basic:
+summary = ai.summarize(article)
+Classification:
+category = ai.classify(article)
+Extraction:
+product = ai.extract(page) {
+
+    name: text
+    price: number
+}
+General:
+answer = ai.ask("What is this article about?", article)
+22. Async
+Because web and AI operations are inherently asynchronous.
+We should make:
+await web.fetch(url)
+valid.
+Example:
+page = await web.open(url)
+
+summary = await ai.summarize(page.text)
+
+return summary
+This maps beautifully to JavaScript.
+23. Secrets
+Never put API keys directly into .app.talk.
+Instead:
+secret OPENAI_KEY
+secret STRIPE_KEY
+Then:
+ai.configure {
+    key: secret.OPENAI_KEY
+}
+The actual values live outside the source:
+.env
+or:
+dark.config
+This is something we'll define properly before implementation.
+24. Config
+For application configuration:
+config {
+
+    port: 3000
+    environment: "development"
+}
+Eventually:
+config {
+    database: env.DATABASE_URL
+}
+25. Imports
+Eventually:
+import web
+import ai
+But here's a thought:
+Do we even need to import core Dark capabilities?
+Maybe not.
+If web and ai are built into DarkTalk:
+web.search(...)
+ai.summarize(...)
+should simply work.
+Imports should primarily be for external packages/modules.
+For example:
+import payments from "dark-payments"
+I'd prefer this.
+26. JavaScript escape hatch
+Absolutely essential.
+Something like:
+js {
+
+    const value = someCustomLibrary.doSomething();
+
+}
+But we need to decide whether variables can cross the boundary.
+Ideally:
+js {
+    return customFunction()
+}
+or:
+result = js {
+    customFunction()
+}
+The second is much cleaner.
+Example:
+result = js {
+    myLibrary.calculate()
+}
+This tells the compiler:
+Execute this JavaScript and assign the result to result.
+
+🧪 Our first real DarkTalk program
+Putting all of this together:
+app Shop
+
+user Customer {
+    name: text
+    email: email
+}
+
+data Product {
+    name: text
+    price: number
+    stock: number
+}
+
+data Order {
+    customer: Customer
+    product: Product
+    quantity: number
+    total: number
+}
+
+action purchase(product, quantity) {
+
+    if product.stock < quantity {
+        fail "Not enough stock"
+    }
+
+    total = product.price * quantity
+
+    product.stock -= quantity
+
+    order = Order.create {
+        product: product
+        quantity: quantity
+        total: total
+    }
+
+    return order
+}
+
+api products {
+
+    GET /products {
+        return Product.all()
+    }
+
+    GET /products/:id {
+        return Product.find(id)
+    }
+}
+
+task priceMonitor {
+
+    every 1 hour {
+
+        for product in Product.all() {
+
+            page = await web.open(product.url)
+
+            latest = web.extract(page) {
+                price: number
+            }
+
+            if latest.price < product.price {
+                product.price = latest.price
+            }
+        }
+    }
+}
+THIS is starting to look like something.
+It describes an actual application.
+And most importantly:
+The developer isn't describing JavaScript.
+They're describing:
+what the application is and what it does.
+
+⚠️ But we have two grammar problems to solve BEFORE coding
+Problem 1 — Product.create, Product.find, Product.all()
+Are these magical built-in methods?
+Or are they part of a standard library?
+I'd strongly prefer standard semantic operations:
+create Product {
+    ...
+}
+
+find Product where id == id
+
+list Product
+Because then DarkTalk remains declarative.
+Problem 2 — What does api actually expose?
+Should this:
+api products {
+
+    GET /products {
+        return Product.all()
+    }
+}
+be required?
+Or should Dark automatically expose APIs for data?
+Maybe:
+api Product
+automatically generates CRUD.
+That could be a killer feature.
+🔥 And this is exactly why we're brainstorming BEFORE coding.
+I think those two decisions are foundational.
+We should settle them next, along with one more:
+How much magic should DarkTalk provide?
+
+Because there's a sweet spot between:
+JavaScript
+    ← too low-level
+and:
+"Dark, please build me Amazon"
+    ← too magical
+We want:
+              DARKTALK
+                 │
+        High-level intent
+                 │
+        Explicit semantics
+                 │
+       Predictable compiler
+Next phase should be specifically about that: the "magic boundary" and the data/API semantics. Once we lock those, we can freeze the grammar and start writing the lexer/parser with confidence.
