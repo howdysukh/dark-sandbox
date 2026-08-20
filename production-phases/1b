@@ -1,0 +1,748 @@
+# 🖤 DarkTalk — Phase 1B: Top-Level Grammar
+
+Perfect. Now we're getting into the **actual grammar**.
+
+And I'm keeping our rule front and center:
+
+> **DarkTalk should be universal.**  
+> A `.dark` file can contain whatever the developer needs. The filename/folder structure is entirely the developer's choice.
+
+We're designing the language around **capabilities**, not app categories.
+
+---
+
+# 1. Brainstorm: What can exist at the top level?
+
+We have a few candidates:
+
+```text
+app
+data
+user
+action
+function
+api
+event
+task
+web
+ai
+config
+secret
+```
+
+But let's not blindly make every one a top-level declaration.
+
+There are three categories.
+
+### A. Definitions
+
+Things that define reusable things:
+
+```text
+data
+user
+action
+function
+```
+
+### B. Application behavior
+
+Things that cause/describe behavior:
+
+```text
+api
+event
+task
+```
+
+### C. Configuration/capabilities
+
+```text
+config
+secret
+```
+
+`web` and `ai` shouldn't necessarily be declarations.
+
+They should probably be **built-in namespaces**:
+
+```text
+web.fetch()
+web.search()
+
+ai.ask()
+ai.extract()
+```
+
+That is cleaner.
+
+---
+
+# 2. Proposed top-level grammar
+
+For v0.1:
+
+```text
+TOP_LEVEL =
+    data
+  | user
+  | action
+  | function
+  | api
+  | event
+  | task
+  | config
+  | secret
+  | #add
+  | js
+```
+
+And:
+
+```text
+.app.talk
+    ↓
+app declaration
+    ↓
+zero or more top-level declarations
+```
+
+While `.dark`:
+
+```text
+.dark
+    ↓
+zero or more declarations
+```
+
+---
+
+# 3. `app`
+
+Only `.app.talk` can contain:
+
+```dark id="m85z1f"
+app MyApplication
+```
+
+And I think we should make this a compiler rule.
+
+If someone writes:
+
+```text id="b8jy7r"
+app Something
+```
+
+inside:
+
+```text id="0j4q7w"
+utils.dark
+```
+
+compiler says:
+
+```text id="y1v4q0"
+Error:
+'app' declarations are only allowed
+in .app.talk entry files.
+```
+
+That's clean.
+
+---
+
+# 4. `data`
+
+Universal structured data.
+
+```dark id="0d1a9f"
+data User {
+    name: text
+    email: email
+}
+```
+
+No assumptions about database.
+
+`data` means:
+
+> **This application has a structured persistent model.**
+
+The runtime/compiler eventually decides how to represent it.
+
+---
+
+# 5. `user`
+
+This one needs a little thought.
+
+We could make:
+
+```dark id="f8t5cx"
+user User {
+    name: text
+    email: email
+}
+```
+
+But that's potentially redundant with:
+
+```dark id="0d1a9f"
+data User {
+    name: text
+    email: email
+}
+```
+
+So why have `user`?
+
+Because `user` can carry **application identity semantics**.
+
+For example:
+
+```dark id="n2w4c6"
+user User {
+    name: text
+    email: email
+}
+```
+
+tells Dark:
+
+> This isn't just data. This represents an application actor.
+
+That could later enable:
+
+```dark id="2l5k9m"
+require User
+```
+
+or permissions.
+
+But **we don't need to build authentication yet.**
+
+I think we keep `user` in the language design, but its v0.1 implementation can be minimal.
+
+---
+
+# 6. `action`
+
+This is one of our core primitives.
+
+```dark id="y5e7z8"
+action calculateTotal(price, quantity) {
+
+    return price * quantity
+}
+```
+
+Actions are application operations.
+
+Example:
+
+```dark id="m1q4z7"
+action processImage(image) {
+
+    result = ai.ask(
+        "Describe this image",
+        image
+    )
+
+    return result
+}
+```
+
+Actions can call:
+
+- data
+- other actions
+- functions
+- web
+- AI
+- JavaScript
+- APIs
+
+---
+
+# 7. `function`
+
+Do we actually need both?
+
+This is an important design decision.
+
+### Function
+
+Pure/general reusable computation:
+
+```dark id="4h8j9k"
+function add(a, b) {
+    return a + b
+}
+```
+
+### Action
+
+Application operation:
+
+```dark id="9v2m5x"
+action purchase(product) {
+    ...
+}
+```
+
+This distinction could become valuable later.
+
+For example, functions should ideally be:
+
+> deterministic / reusable / no application side effects.
+
+Actions can:
+
+> mutate data, call APIs, trigger events, interact with web, etc.
+
+That's a good semantic distinction.
+
+### So I vote **YES: both.**
+
+---
+
+# 8. `api`
+
+An API is an interface into the application.
+
+Example:
+
+```dark id="4t9v2k"
+api users {
+
+    GET /users {
+        return list User
+    }
+}
+```
+
+But here's where I want to improve our previous syntax.
+
+Rather than making the developer manually construct HTTP responses, Dark should understand the intent.
+
+For example:
+
+```dark id="x9r3ka"
+api users {
+
+    GET /users {
+        return list User
+    }
+
+    GET /users/:id {
+        return find User where id == id
+    }
+}
+```
+
+Dark generates:
+
+```text id="q5f7p2"
+HTTP server
+   ↓
+GET /users
+   ↓
+Dark runtime
+   ↓
+Database
+   ↓
+JSON response
+```
+
+---
+
+# 9. `event`
+
+An event describes something that happened.
+
+But instead of:
+
+```dark id="t5r6y2"
+event order.created
+```
+
+I think the declaration itself should define its payload:
+
+```dark id="x8m3q7"
+event user.registered(user: User)
+```
+
+Then handlers:
+
+```dark id="v6n2k8"
+when user.registered(user) {
+
+    print(user.email)
+}
+```
+
+This gives events structure.
+
+Another example:
+
+```dark id="d3q9p1"
+event file.uploaded(file: File)
+```
+
+Then:
+
+```dark id="a7m4c2"
+when file.uploaded(file) {
+
+    process(file)
+}
+```
+
+This is universal.
+
+---
+
+# 10. `task`
+
+A task is a scheduled/background operation.
+
+```dark id="w8p3s5"
+task cleanup {
+
+    every 1 hour {
+
+        cleanupTemporaryFiles()
+    }
+}
+```
+
+Or:
+
+```dark id="j2k7m9"
+task backup {
+
+    every 24 hours {
+
+        backupDatabase()
+    }
+}
+```
+
+Eventually:
+
+```dark id="m5r1c8"
+task weeklyReport {
+
+    every monday at 09:00 {
+
+        generateReport()
+    }
+}
+```
+
+But scheduling grammar can be expanded later.
+
+---
+
+# 11. `config`
+
+Application configuration.
+
+```dark id="e6k2p4"
+config {
+
+    port: 3000
+    environment: "development"
+}
+```
+
+I'd actually prefer:
+
+```dark id="x2c7m9"
+config port = 3000
+config environment = "development"
+```
+
+because it's more consistent with the rest of the language.
+
+But we need to decide this later.
+
+---
+
+# 12. `secret`
+
+Secrets shouldn't be values.
+
+So:
+
+```dark id="r8v3n1"
+secret OPENAI_KEY
+secret DATABASE_URL
+```
+
+means:
+
+> These values must be provided by the runtime environment.
+
+Then:
+
+```dark id="z5m7q2"
+ai.configure {
+    key: OPENAI_KEY
+}
+```
+
+We need to decide whether secret references use:
+
+```text
+OPENAI_KEY
+```
+
+or:
+
+```text
+secret.OPENAI_KEY
+```
+
+I prefer:
+
+```dark id="k3p8v6"
+secret.OPENAI_KEY
+```
+
+because it prevents confusion with normal variables.
+
+---
+
+# 13. `#add`
+
+Our import primitive:
+
+```dark id="f4m7s9"
+#add "sectionManager.dark" as sections
+```
+
+This is a declaration.
+
+And it can appear anywhere top-level.
+
+---
+
+# 14. `js`
+
+Our escape hatch:
+
+```dark id="r2x6c9"
+js {
+    console.log("Hello from JavaScript")
+}
+```
+
+But I'm leaning toward **not allowing arbitrary top-level `js` blocks**.
+
+Why?
+
+Because:
+
+```dark id="q9s3w7"
+js {
+   ...
+}
+```
+
+could completely undermine the architecture.
+
+Instead, JavaScript should be callable as an expression:
+
+```dark id="b4m8k1"
+result = js {
+    someJavaScriptFunction()
+}
+```
+
+That makes the boundary explicit.
+
+---
+
+# 🧠 So our first grammar hierarchy looks like this
+
+```text id="6h9m2v"
+DarkTalk Program
+│
+├── Application Declaration (.app.talk only)
+│
+├── Module Imports
+│
+├── Data Definitions
+│
+├── User Definitions
+│
+├── Function Definitions
+│
+├── Action Definitions
+│
+├── API Definitions
+│
+├── Event Definitions
+│
+├── Event Handlers
+│
+├── Task Definitions
+│
+├── Config Definitions
+│
+└── Secret Definitions
+```
+
+And expressions can use:
+
+```text id="k2v7p9"
+variables
+literals
+arrays
+objects
+function calls
+member access
+operators
+web.*
+ai.*
+js {}
+```
+
+---
+
+# 🔥 Now let's make the language feel good
+
+Here's a realistic `.dark` file:
+
+```dark id="u4r8m2"
+#add "database.dark" as db
+#add "notifications.dark" as notify
+
+data User {
+    name: text
+    email: email
+}
+
+action register(name, email) {
+
+    user = create User {
+        name: name
+        email: email
+    }
+
+    notify.send(
+        user,
+        "Welcome!"
+    )
+
+    return user
+}
+
+api users {
+
+    POST /users {
+
+        user = register(
+            body.name,
+            body.email
+        )
+
+        return user
+    }
+}
+
+event user.registered(user: User)
+
+when user.registered(user) {
+
+    notify.send(
+        user,
+        "Your account is ready."
+    )
+}
+```
+
+That feels like an **application description**, not a framework configuration file.
+
+---
+
+# 🚨 But now we hit our next major design question
+
+We have:
+
+```dark id="s7x4q2"
+data User
+```
+
+and:
+
+```dark id="k3p9v8"
+action register(...)
+```
+
+But then we're using:
+
+```dark id="f5n2m6"
+create User
+```
+
+and:
+
+```dark id="n8q4r1"
+list User
+```
+
+and:
+
+```dark id="m7c2v5"
+find User
+```
+
+### These operations need to be part of DarkTalk's semantic standard.
+
+This is where I think the next brainstorming phase should focus.
+
+We need to design **DarkTalk's application verbs**:
+
+```text
+create
+find
+list
+update
+delete
+```
+
+And decide whether they're:
+
+### A. Built-in language keywords
+
+```dark
+create User
+```
+
+### B. Standard library functions
+
+```dark
+data.create(User)
+```
+
+### C. Methods
+
+```dark
+User.create()
+```
+
+### D. A richer declarative syntax
+
+```dark
+create User {
+    ...
+}
+```
+
+**I strongly prefer A/D** because it preserves the whole point of DarkTalk:
+
+> The developer describes application intent instead of manually calling infrastructure APIs.
+
+That is the next thing I'd design before we freeze the grammar.
