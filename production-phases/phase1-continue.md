@@ -1,354 +1,632 @@
-**YES. That is a much cleaner convention.** And it gives DarkTalk a very clear distinction between the **application entrypoint** and normal source modules.
+**YES — this is an important language-design decision.** And I really like the direction of `#add`. It makes DarkTalk feel like its own language instead of looking like JavaScript with renamed keywords.
 
-Let's lock this into the design.
+Let's formalize what you just decided, then brainstorm the implications before we lock it.
 
-# 🖤 DarkTalk File System Model
+---
 
-### The main application file
+# 🖤 DarkTalk File Architecture
+
+### Main application
+
+Exactly **one** file:
+
+```text
+xyz.app.talk
+```
+
+This is the entry point.
+
+Examples:
 
 ```text
 shop.app.talk
+social.app.talk
+monitor.app.talk
+gan.app.talk
+anything.app.talk
 ```
 
-There is **exactly one** `.app.talk` entrypoint for an application.
+### Supporting files
 
-Everything else is:
+Unlimited:
 
 ```text
-products.dark
+section.dark
+database.dark
 users.dark
-payments.dark
-monitor.dark
-utils.dark
+web.dark
+helpers.dark
+analytics.dark
 ```
 
-So a project could look like:
+These are reusable Dark modules.
+
+So a project might look like:
 
 ```text
 my-app/
 │
-├── my-app.app.talk        ← application entrypoint
+├── my-app.app.talk       ← MAIN APPLICATION
 │
-├── products.dark
 ├── users.dark
+├── database.dark
 ├── payments.dark
-├── workflows.dark
 ├── web.dark
 │
-├── config/
-│   └── development.dark
-│
-└── package/
-    └── ...
+└── dark.config
 ```
 
-The compiler knows:
-
-> **`.app.talk` = application root**
-
-> **`.dark` = DarkTalk module**
+That's very similar to how developers already think about JS projects.
 
 ---
 
-# 🔗 Imports
+# 🔥 And `#add` is actually a cool idea
 
-The main file can import modules:
+Instead of:
+
+```javascript
+import sections from "./section.dark";
+```
+
+DarkTalk:
 
 ```dark
-import products from "./products.dark"
-import users from "./users.dark"
-import payments from "./payments.dark"
+#add "section.dark" as sections
 ```
 
 Then:
 
-```text
-my-app.app.talk
-       │
-       ├── products.dark
-       ├── users.dark
-       └── payments.dark
+```dark
+sections.view()
 ```
 
-And those modules can potentially import other modules:
-
-```text
-products.dark
-      ↓
-utils.dark
-      ↓
-web.dark
-```
-
-Exactly like a normal programming ecosystem.
+Beautifully simple.
 
 ---
 
-# 🧠 But I want one important rule
+# But let's brainstorm `#add` before freezing it.
 
-A `.dark` file should **not automatically be an application.**
+There are three possible meanings.
 
-It's a module.
-
-For example:
-
-### `products.dark`
+### A — Import module
 
 ```dark
-data Product {
-    name: text
-    price: number
-    stock: number
-}
+#add "section.dark" as sections
+```
 
-action calculateDiscount(product) {
+means:
 
-    if product.price > 1000 {
-        return product.price * 0.9
+> Load this Dark module and expose it as `sections`.
+
+This is what I recommend.
+
+---
+
+### B — Import remote module
+
+Because you said:
+
+```text
+[file-url]
+```
+
+we could eventually allow:
+
+```dark
+#add "https://example.com/modules/auth.dark" as auth
+```
+
+🔥
+
+That would be **very interesting**, but I would NOT enable arbitrary remote imports in v0.1.
+
+Why?
+
+Security.
+
+Imagine:
+
+```dark
+#add "https://evil.com/app.dark" as something
+```
+
+Now the compiler executes code from the Internet.
+
+That's a nightmare.
+
+So:
+
+### v0.1
+
+```dark
+#add "./section.dark" as sections
+```
+
+### Future
+
+```dark
+#add "https://registry.dark.dev/..." as module
+```
+
+through a **trusted package/registry system**.
+
+---
+
+# 🧠 What exactly is inside `.dark`?
+
+This is where we need another important design decision.
+
+Suppose:
+
+### `section.dark`
+
+```dark
+view(name) {
+
+    return {
+        title: name
     }
-
-    return product.price
 }
 ```
 
 Then:
-
-### `shop.app.talk`
-
-```dark
-app Shop
-
-import products from "./products.dark"
-
-api products {
-
-    GET /products {
-        return products.list()
-    }
-}
-```
-
-The application composes modules.
-
----
-
-# 🔥 This gives us a really nice architecture
 
 ```text
-                  app.talk
-                     │
-               Application
-                  Root
-                     │
-        ┌────────────┼────────────┐
-        ▼            ▼            ▼
-   products.dark  users.dark  payments.dark
-        │            │            │
-        └────────────┼────────────┘
-                     ▼
-                Dark Runtime
-                     │
-                     ▼
-                JavaScript
+#add "section.dark" as sections
 ```
+
+gives:
+
+```text
+sections.view()
+```
+
+So `.dark` files are essentially **modules**.
+
+But we need to decide whether a `.dark` file can contain:
+
+### Option 1 — Anything
+
+```dark
+data ...
+action ...
+api ...
+task ...
+```
+
+### Option 2 — Only reusable definitions
+
+```dark
+function ...
+action ...
+data ...
+```
+
+### Option 3 — A module namespace
+
+Everything inside the file belongs to that module.
+
+I strongly recommend **Option 3**.
 
 ---
 
-# 📦 What can `.dark` contain?
+# Example
 
-We should **not restrict it to one thing**.
-
-A module could contain:
+### `section.dark`
 
 ```dark
-data Product {
-    ...
+view(name) {
+
+    return {
+        title: name
+    }
 }
 
-action calculatePrice() {
-    ...
-}
+header() {
 
-event product.updated
-
-function helper() {
-    ...
+    return "DarkTalk"
 }
 ```
 
-So `.dark` means:
+Then:
 
-> **Reusable DarkTalk source module.**
+### `website.app.talk`
+
+```dark
+app Website
+
+#add "section.dark" as sections
+
+page = sections.view("Home")
+
+print(page)
+```
+
+The compiler understands:
+
+```text
+sections
+   │
+   ├── view()
+   └── header()
+```
+
+That's clean.
 
 ---
 
-# 🧩 Exports
+# 🔥 We can make modules even nicer
 
-We probably want explicit exports eventually.
+Suppose:
 
-For example:
+### `math.dark`
 
 ```dark
-export data Product {
-
-    name: text
-    price: number
+add(a, b) {
+    return a + b
 }
-```
 
-And:
-
-```dark
-export action calculatePrice(product) {
-
-    return product.price
+multiply(a, b) {
+    return a * b
 }
 ```
 
 Then:
 
 ```dark
-import { Product, calculatePrice } from "./products.dark"
+#add "math.dark" as math
+
+result = math.add(10, 20)
+
+print(result)
 ```
 
-This is much more predictable than exporting everything automatically.
-
-### But...
-
-For v0.1, we could make module exports automatic and introduce explicit `export` in v0.2.
-
-I'm leaning toward **explicit exports from day one**, though, because we're designing a real language and it'll save us from awkward module semantics later.
+Very readable.
 
 ---
 
-# 🚨 One thing we should NOT do
+# What about multiple imports?
 
-Don't make:
+Simple:
+
+```dark
+#add "math.dark" as math
+#add "web.dark" as webtools
+#add "users.dark" as users
+```
+
+No semicolons.
+
+No parentheses.
+
+No import boilerplate.
+
+---
+
+# What about directories?
+
+Eventually:
+
+```dark
+#add "./utils/math.dark" as math
+```
+
+or:
+
+```dark
+#add "./modules/auth.dark" as auth
+```
+
+Good.
+
+---
+
+# What about importing JavaScript?
+
+This is where our JS escape hatch becomes useful.
+
+Potentially:
+
+```dark
+#add "./custom.js" as custom
+```
+
+Then:
+
+```dark
+custom.calculate()
+```
+
+This allows DarkTalk to coexist with the existing JS ecosystem.
+
+That's **very important**.
+
+We don't want to build an island.
+
+---
+
+# ⚠️ But we should distinguish `.dark` and `.js`
+
+### `.dark`
+
+DarkTalk module:
 
 ```text
 section.dark
 ```
 
-a different language.
+Compiler understands it.
 
-It uses **the exact same DarkTalk syntax**.
+### `.js`
 
-The only difference is:
-
-```text
-.app.talk
-```
-
-has an application declaration:
-
-```dark
-app MyApplication
-```
-
-while:
+JavaScript module:
 
 ```text
-.dark
+custom.js
 ```
 
-is a module.
+Node.js understands it.
+
+DarkTalk can consume both.
 
 ---
 
-# Example: universal application
-
-### `research.app.talk`
-
-```dark
-app Research
-
-import web from "./web.dark"
-import analysis from "./analysis.dark"
-
-task dailyResearch {
-
-    every 1 day {
-
-        results = web.collect()
-
-        analysis.process(results)
-    }
-}
-```
-
-### `web.dark`
-
-```dark
-export action collect() {
-
-    results = await web.search("latest AI research")
-
-    return results
-}
-```
-
-### `analysis.dark`
-
-```dark
-export action process(results) {
-
-    return ai.summarize(results)
-}
-```
-
-That's **not a shop language**.
-
-It's a general application language.
-
----
-
-# 📐 So our file specification becomes
-
-| Extension | Meaning | Quantity |
-|---|---|---|
-| `.app.talk` | Application entrypoint | **Exactly 1** |
-| `.dark` | DarkTalk source module | Unlimited |
-| `.js` | JavaScript escape-hatch / external JS | Unlimited |
-| `.json` | Data/config where appropriate | Optional |
-
-And:
+# 🧩 So the project architecture becomes
 
 ```text
 project/
 │
-├── application.app.talk    ← required
+├── project.app.talk        ← REQUIRED ENTRY POINT
 │
-├── *.dark                   ← source modules
-├── *.js                     ← optional JS
-└── dark.config              ← compiler configuration
+├── components.dark
+├── database.dark
+├── workflows.dark
+├── web.dark
+│
+├── custom.js               ← optional JS
+│
+├── dark.config             ← compiler configuration
+│
+└── package.json             ← runtime dependencies
 ```
 
-### One additional rule:
-
-**The `.app.talk` file doesn't need to be named after the app.**
-
-So:
+And:
 
 ```text
-main.app.talk
+dark build
 ```
 
-is valid.
-
-But:
+automatically looks for:
 
 ```text
-shop.app.talk
+*.app.talk
 ```
 
-is probably the natural convention.
+and verifies that **exactly one exists**.
+
+That's a nice compiler rule.
 
 ---
 
-## 🔒 I would officially lock this decision:
+# 🖤 Another thing I LOVE about `#add`
 
-> **DarkTalk applications contain exactly one `.app.talk` entrypoint. The `.app.talk` file defines the application and serves as the compilation root. All reusable DarkTalk source is contained in `.dark` modules, which may be imported by the entrypoint or other modules. JavaScript remains an optional escape hatch.**
+The `#` can become a DarkTalk convention.
 
-That's a **very good foundation** for the module system and compiler architecture.
+For example, potentially:
 
-Next grammar decision I'd tackle is **imports + exports properly**, because once we define those, we can start designing how the compiler builds the entire application's module graph.
+```text
+#add
+#use
+#config
+```
+
+But **I would NOT expand this yet.**
+
+We should avoid creating a bunch of special syntax just because `#` looks cool.
+
+For v0.1:
+
+```text
+#add
+```
+
+means module inclusion.
+
+That's it.
+
+---
+
+# 🔥 Now `sections.view()` gives us another language concept
+
+We need **member access**.
+
+Standard:
+
+```dark
+sections.view()
+```
+
+Property:
+
+```dark
+sections.name
+```
+
+Nested:
+
+```dark
+user.profile.name
+```
+
+Function calls:
+
+```dark
+sections.view("home")
+```
+
+So our expression grammar needs:
+
+```text
+identifier
+identifier.identifier
+identifier()
+identifier.identifier()
+identifier.property
+identifier.method()
+```
+
+This is normal enough that developers will immediately understand it.
+
+---
+
+# One thing I'd change slightly
+
+You said:
+
+```text
+#add [file-url] as [var]
+```
+
+I would define the syntax as:
+
+```dark
+#add "path/to/file.dark" as moduleName
+```
+
+Quotes are mandatory.
+
+So:
+
+```dark
+#add "section.dark" as sections
+```
+
+and:
+
+```dark
+#add "./modules/auth.dark" as auth
+```
+
+But not:
+
+```dark
+#add section.dark as sections
+```
+
+Why?
+
+Because it makes the parser completely unambiguous.
+
+---
+
+# 🌐 And later...
+
+We can build a Dark package registry.
+
+Then:
+
+```dark
+#add "dark://web-tools" as web
+```
+
+or something similar.
+
+But **not tonight.**
+
+First we need local modules working.
+
+---
+
+# 🧠 Current DarkTalk file model
+
+So I'm locking this as our current design:
+
+```text
+┌──────────────────────────────────────┐
+│            DARKTALK PROJECT          │
+├──────────────────────────────────────┤
+│                                      │
+│  xyz.app.talk                        │
+│       │                              │
+│       │ #add                         │
+│       ├──────────→ section.dark      │
+│       ├──────────→ database.dark     │
+│       ├──────────→ web.dark          │
+│       └──────────→ custom.js         │
+│                                      │
+└──────────────────────────────────────┘
+```
+
+### Rules
+
+**1. Exactly one `.app.talk` per application project.**
+
+**2. `.dark` files are reusable DarkTalk modules.**
+
+**3. `.js` files can be imported as escape-hatch modules.**
+
+**4. `#add` is the module-import syntax.**
+
+**5. Imported modules receive an explicit namespace.**
+
+```dark
+#add "section.dark" as sections
+```
+
+**6. Namespace members are accessed with `.`**
+
+```dark
+sections.view()
+```
+
+**7. Local file imports first. Remote imports later through a controlled registry.**
+
+---
+
+# And this actually makes our compiler architecture cleaner
+
+```text
+                xyz.app.talk
+                     │
+                     ▼
+                  Parser
+                     │
+                     ▼
+                #add found
+                     │
+          ┌──────────┴──────────┐
+          ▼                     ▼
+     section.dark          database.dark
+          │                     │
+          ▼                     ▼
+       Parser                Parser
+          │                     │
+          └──────────┬──────────┘
+                     ▼
+                Module Graph
+                     │
+                     ▼
+                    AST
+                     │
+                     ▼
+                 Dark IR
+                     │
+                     ▼
+                JavaScript
+```
+
+That's the right foundation for a real compiler.
+
+---
+
+## 🔒 One design rule I'd add to Phase 1
+
+> **DarkTalk applications have one entry point, while functionality is composable through modules.**
+
+That means we're getting the best of both worlds:
+
+**simple entry point** + **normal multi-file development**.
+
+And importantly, **we're not designing DarkTalk around shops, websites, SaaS, or any other specific type of application.** `shop.app.talk` is just one example of what the language can describe.
+
+The next grammar piece I'd design is **module exports + declarations**—i.e. exactly what can live inside `section.dark`, how `sections.view()` works, and how the compiler knows what a module exposes. That needs to be nailed down before we touch the parser.
