@@ -1,0 +1,18 @@
+app Calculator
+
+#add "math.dark" as math
+
+values = [2, 4, 6, 8]
+total = 0
+
+for value in values {
+    total += value
+}
+
+if total > 10 {
+    print("Total: " + total)
+} else {
+    print("Total is small")
+}
+
+print(await math.square(total))

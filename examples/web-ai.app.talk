@@ -1,0 +1,10 @@
+app WebResearch
+
+secret DARK_AI_KEY
+
+topic = "DarkTalk application language"
+results = await web.search(topic)
+page = await web.open(results[0].url)
+summary = await ai.summarize(page.text)
+
+print(summary)

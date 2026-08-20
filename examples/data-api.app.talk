@@ -1,0 +1,20 @@
+app NotesApi
+
+data Note {
+    title: text
+    body: text
+}
+
+note = create Note {
+    title: "First note"
+    body: "DarkTalk data is alive"
+}
+
+api notes {
+    GET "/notes" {
+        return list Note
+    }
+}
+
+print(note.title)
+print(list Note)

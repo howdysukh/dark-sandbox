@@ -1,0 +1,18 @@
+app Automation
+
+data Job {
+    name: text
+}
+
+event job.created(job)
+
+when job.created(job) {
+    print("Event received: " + job.name)
+}
+
+task cleanup every 5 minutes {
+    print("Cleanup is scheduled")
+}
+
+job = create Job { name: "nightly-report" }
+emit job.created(job)

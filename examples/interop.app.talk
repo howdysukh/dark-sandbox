@@ -1,0 +1,5 @@
+app Interop
+
+#add "helper.js" as helper
+
+print(await helper.greet("Sukh"))

@@ -1,0 +1,6 @@
+app HelloDark
+
+#add "greetings.dark" as greetings
+
+name = "Sukh"
+print(await greetings.hello(name))
