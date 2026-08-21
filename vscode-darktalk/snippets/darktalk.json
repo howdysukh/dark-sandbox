@@ -1,0 +1,49 @@
+{
+  "DarkTalk Function": {
+    "prefix": "function",
+    "body": [
+      "function ${1:name}(${2:parameters}) {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Create a DarkTalk function"
+  },
+
+  "DarkTalk Action": {
+    "prefix": "action",
+    "body": [
+      "action ${1:name}() {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Create a DarkTalk action"
+  },
+
+  "DarkTalk Event": {
+    "prefix": "event",
+    "body": [
+      "event ${1:name} {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Create a DarkTalk event"
+  },
+
+  "DarkTalk Task": {
+    "prefix": "task",
+    "body": [
+      "task ${1:name} {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Create a DarkTalk task"
+  },
+
+  "DarkTalk Import": {
+    "prefix": "#add",
+    "body": [
+      "#add \"${1:file.dark}\" as ${2:name}"
+    ],
+    "description": "Import a DarkTalk module"
+  }
+}

@@ -1,0 +1,129 @@
+{
+  "name": "darktalk-language",
+  "displayName": "DarkTalk Language Support",
+  "description": "Syntax highlighting and language support for the DarkTalk application development language.",
+  "version": "0.1.0",
+  "publisher": "darktalk",
+  "license": "MIT",
+  "main": "./extension.js",
+  "activationEvents": [
+    "onLanguage:darktalk",
+    "onLanguage:darktalk-app"
+  ],
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "darktalk-app",
+        "aliases": [
+          "DarkTalk Application",
+          "DarkTalk App"
+        ],
+        "extensions": [
+          ".app.talk"
+        ],
+        "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "darktalk",
+        "aliases": [
+          "DarkTalk",
+          "DarkTalk Module"
+        ],
+        "extensions": [
+          ".dark"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "darktalk-app",
+        "scopeName": "source.darktalk",
+        "path": "./syntaxes/darktalk.tmLanguage.json"
+      },
+      {
+        "language": "darktalk",
+        "scopeName": "source.darktalk",
+        "path": "./syntaxes/darktalk.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "darktalk.run",
+        "title": "DarkTalk: Run",
+        "icon": "$(play)"
+      },
+      {
+        "command": "darktalk.build",
+        "title": "DarkTalk: Build",
+        "icon": "$(tools)"
+      },
+      {
+        "command": "darktalk.check",
+        "title": "DarkTalk: Check",
+        "icon": "$(check)"
+      },
+      {
+        "command": "darktalk.doctor",
+        "title": "DarkTalk: Doctor",
+        "icon": "$(heart)"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "darktalk.run"
+        },
+        {
+          "command": "darktalk.build"
+        },
+        {
+          "command": "darktalk.check"
+        },
+        {
+          "command": "darktalk.doctor"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "darktalk.run",
+          "when": "resourceLangId == darktalk-app",
+          "group": "navigation@1"
+        },
+        {
+          "command": "darktalk.check",
+          "when": "resourceLangId == darktalk-app",
+          "group": "navigation@2"
+        },
+        {
+          "command": "darktalk.build",
+          "when": "resourceLangId == darktalk-app",
+          "group": "navigation@3"
+        }
+      ]
+    },
+    "iconThemes": [
+      {
+        "id": "darktalk-seti",
+        "label": "DarkTalk + Seti",
+        "path": "./icons/darktalk-seti-icon-theme.json"
+      }
+    ],
+    "snippets": [
+  {
+    "language": "darktalk",
+    "path": "./snippets/darktalk.json"
+  },
+  {
+    "language": "darktalk-app",
+    "path": "./snippets/darktalk.json"
+  }
+]
+  }
+}

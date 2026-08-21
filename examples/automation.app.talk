@@ -16,3 +16,4 @@ task cleanup every 5 minutes {
 
 job = create Job { name: "nightly-report" }
 emit job.created(job)
+

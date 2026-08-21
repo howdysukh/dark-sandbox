@@ -1,0 +1,135 @@
+{
+  "print": {
+    "description": "Print output to the application console",
+    "methods": {
+      "call": {
+        "signature": "Dark.print(value)",
+        "description": "Prints values to the runtime console."
+      }
+    }
+  },
+
+  "ai": {
+    "description": "Local-safe AI runtime",
+    "methods": {
+      "ask": {
+        "signature": "Dark.ai.ask(prompt, input)",
+        "description": "Ask the AI runtime for a response."
+      },
+      "summarize": {
+        "signature": "Dark.ai.summarize(input)",
+        "description": "Summarize text or data."
+      },
+      "classify": {
+        "signature": "Dark.ai.classify(input, labels)",
+        "description": "Classify input using provided labels."
+      },
+      "extract": {
+        "signature": "Dark.ai.extract(input, shape)",
+        "description": "Extract structured information."
+      }
+    }
+  },
+
+  "http": {
+    "description": "HTTP client utilities",
+    "methods": {
+      "get": {
+        "signature": "Dark.http.get(url)",
+        "description": "Perform an HTTP GET request."
+      },
+      "post": {
+        "signature": "Dark.http.post(url, body)",
+        "description": "Perform an HTTP POST request."
+      }
+    }
+  },
+
+  "web": {
+    "description": "Web utilities",
+    "methods": {
+      "fetch": {
+        "signature": "Dark.web.fetch(url)",
+        "description": "Fetch web content."
+      },
+      "search": {
+        "signature": "Dark.web.search(query)",
+        "description": "Search using the Dark web runtime."
+      },
+      "open": {
+        "signature": "Dark.web.open(url)",
+        "description": "Open a web resource."
+      },
+      "extract": {
+        "signature": "Dark.web.extract(page, selector)",
+        "description": "Extract information from a page."
+      }
+    }
+  },
+
+  "file": {
+    "description": "File system utilities",
+    "methods": {
+      "readFile": {
+        "signature": "Dark.file.readFile(path)",
+        "description": "Read a file."
+      },
+      "writeFile": {
+        "signature": "Dark.file.writeFile(path, data)",
+        "description": "Write a file."
+      }
+    }
+  },
+
+  "time": {
+    "description": "Time utilities",
+    "methods": {
+      "now": {
+        "signature": "Dark.time.now()",
+        "description": "Get the current time."
+      },
+      "sleep": {
+        "signature": "Dark.time.sleep(milliseconds)",
+        "description": "Pause execution."
+      }
+    }
+  },
+
+  "json": {
+    "description": "JSON utilities",
+    "methods": {
+      "parse": {
+        "signature": "Dark.json.parse(value)",
+        "description": "Parse JSON data."
+      },
+      "stringify": {
+        "signature": "Dark.json.stringify(value)",
+        "description": "Convert data into JSON."
+      }
+    }
+  },
+
+  "crypto": {
+    "description": "Cryptography utilities",
+    "methods": {
+      "uuid": {
+        "signature": "Dark.crypto.uuid()",
+        "description": "Generate a UUID."
+      },
+      "hash": {
+        "signature": "Dark.crypto.hash(value)",
+        "description": "Generate a SHA-256 hash."
+      }
+    }
+  },
+
+  "env": {
+    "description": "Environment access",
+    "methods": {
+      "get": {
+        "signature": "Dark.env.get(name)",
+        "description": "Read environment variables."
+      }
+    }
+  }
+}

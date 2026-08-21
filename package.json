@@ -1,7 +1,7 @@
 {
   "name": "@darktalk/compiler",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "description": "DarkTalk compiler foundation — talk to your application.",
   "type": "commonjs",
   "bin": {
@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "node bin/dark.js build examples/hello.app.talk",
+    "smoke": "node bin/dark.js run examples/hello.app.talk",
     "test": "node --test tests/**/*.test.js"
   },
   "engines": {

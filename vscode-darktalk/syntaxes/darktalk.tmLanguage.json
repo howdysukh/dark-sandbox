@@ -1,0 +1,65 @@
+{
+  "scopeName": "source.darktalk",
+  "name": "DarkTalk",
+  "patterns": [
+    {
+      "name": "comment.line.double-slash.darktalk",
+      "match": "//.*$"
+    },
+    {
+      "name": "keyword.directive.darktalk",
+      "match": "#add\\b"
+    },
+    {
+      "name": "keyword.declaration.darktalk",
+      "match": "\\b(app|function|data|action|event|task|api|when)\\b"
+    },
+    {
+      "name": "keyword.control.darktalk",
+      "match": "\\b(if|else|for|while|return|await|break|continue)\\b"
+    },
+    {
+      "name": "keyword.control.darktalk",
+      "match": "\\b(every|in|where)\\b"
+    },
+    {
+      "name": "constant.language.darktalk",
+      "match": "\\b(true|false|null)\\b"
+    },
+    {
+      "name": "constant.numeric.darktalk",
+      "match": "\\b\\d+(?:\\.\\d+)?\\b"
+    },
+    {
+      "name": "string.quoted.double.darktalk",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.darktalk",
+          "match": "\\\\."
+        }
+      ]
+    },
+    {
+      "name": "entity.name.function.darktalk",
+      "match": "\\b[A-Za-z_][A-Za-z0-9_]*(?=\\s*\\()"
+    },
+    {
+      "name": "support.function.darktalk",
+      "match": "\\b(print|log|fetch|search|open|extract)\\b"
+    },
+    {
+      "name": "support.class.darktalk",
+      "match": "\\b(web|ai|data|http|json)\\b"
+    },
+    {
+      "name": "keyword.operator.darktalk",
+      "match": "===|!==|==|!=|<=|>=|=>|=|\\+|-|\\*|/|%|<|>"
+    },
+    {
+      "name": "variable.other.darktalk",
+      "match": "\\b[A-Za-z_][A-Za-z0-9_]*\\b"
+    }
+  ]
+}
