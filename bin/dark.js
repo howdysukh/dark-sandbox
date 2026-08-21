@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 'use strict';
 
+const { startup, loading } = require('../src/cli/ui');
+
 const fs = require('node:fs');
 const path = require('node:path');
+const ui = require('../src/cli/ui');
 const { spawnSync } = require('node:child_process');
 const { build } = require('../src/compiler');
 const { DarkError } = require('../src/errors');
@@ -22,11 +25,30 @@ function findEntry(directory = process.cwd()) {
   if (entries.length === 0) throw new DarkError("I couldn't find an .app.talk entry file here.", { file: directory, fix: 'Run dark init my-app, or pass a file: dark run my-app.app.talk.' });
   throw new DarkError("I found more than one .app.talk entry file here.", { file: directory, fix: 'Pass the one you want: dark run your-app.app.talk.' });
 }
-function compile(file) {
-  console.log("I'm reading your application...");
-  const result = build(path.resolve(file));
-  console.log(`I've understood ${result.moduleCount} ${result.moduleCount === 1 ? 'file' : 'files'}.`);
-  console.log("I'm building the JavaScript underneath. You don't need to worry about it.");
+async function compile(file) {
+
+  await loading(
+    "Reading your application"
+  );
+
+
+  const result = build(
+    path.resolve(file)
+  );
+
+
+  await loading(
+    `Understanding ${result.moduleCount} ${
+      result.moduleCount === 1 ? "file" : "files"
+    }`
+  );
+
+
+  await loading(
+    "Building JavaScript underneath"
+  );
+
+
   return result;
 }
 function init(folder = 'my-dark-app') {
@@ -137,15 +159,141 @@ function uninstall() {
   if (!root || !fs.existsSync(path.join(root, 'package.json'))) throw new DarkError("I can't find a managed DarkTalk installation to remove.", { fix: 'This looks like a local checkout. Delete it yourself only if you no longer need the source.' });
   fs.rmSync(root, { recursive: true, force: true }); console.log("\nI've removed the managed DarkTalk installation. Your applications are untouched.\n");
 }
-try {
-  if (!command || command === 'help' || command === '--help') welcome();
-  else if (command === '--version' || command === 'version') console.log(`DarkTalk ${PACKAGE.version}`);
-  else if (command === 'init') init(args[0]); else if (command === 'doctor') doctor(); else if (command === 'install') dependencyMessage(); else if (command === 'update') updateMessage(); else if (command === 'uninstall') uninstall();
-  else if (['build', 'run', 'check'].includes(command)) {
-    const input = args[0] || findEntry();
-    if (!input) throw new DarkError(`I need an .app.talk file for dark ${command}.`, { fix: `Try dark ${command} my-app.app.talk.` });
-    const result = compile(input);
-    if (command === 'check') console.log("\nI'm satisfied. Your application is valid.");
-    else { console.log(`\nI'm ready. Your application is at:\n${result.outputFile}`); if (command === 'run') { console.log("\nI'm waking your application up...\n"); const child = spawnSync(process.execPath, [result.outputFile], { stdio: 'inherit' }); process.exitCode = child.status ?? 1; } }
-  } else { welcome(); process.exitCode = 1; }
-} catch (error) { if (error instanceof DarkError) console.error(error.format()); else console.error(`\n${paint('31', 'ERROR:')} I couldn't finish this.\n\n${paint('32', 'FIX:')} ${error.message}`); process.exitCode = 1; }
+(async () => {
+
+  try {
+
+    await startup();
+
+    if (!command || command === 'help' || command === '--help') {
+      welcome();
+      return;
+    }
+
+
+    if (command === '--version' || command === 'version') {
+      console.log(`DarkTalk ${PACKAGE.version}`);
+      return;
+    }
+
+
+    switch (command) {
+
+      case 'init':
+        init(args[0]);
+        break;
+
+
+      case 'doctor':
+        doctor();
+        break;
+
+
+      case 'install':
+        dependencyMessage();
+        break;
+
+
+      case 'update':
+        updateMessage();
+        break;
+
+
+      case 'uninstall':
+        uninstall();
+        break;
+
+
+      case 'build':
+      case 'run':
+      case 'check': {
+
+        const input = args[0] || findEntry();
+
+
+        if (!input) {
+          throw new DarkError(
+            `I need an .app.talk file for dark ${command}.`,
+            {
+              fix: `Try dark ${command} my-app.app.talk.`
+            }
+          );
+        }
+
+
+        const result = await compile(input);
+
+
+        if (command === 'check') {
+
+          console.log(
+            "\nI'm satisfied. Your application is valid."
+          );
+
+          break;
+        }
+
+
+        console.log(
+          `\nI'm ready. Your application is at:\n${result.outputFile}`
+        );
+
+
+        if (command === 'run') {
+
+          console.log(
+            "\nI'm waking your application up...\n"
+          );
+
+
+          const child = spawnSync(
+            process.execPath,
+            [result.outputFile],
+            {
+              stdio: 'inherit'
+            }
+          );
+
+
+          process.exitCode =
+            child.status ?? 1;
+        }
+
+        break;
+      }
+
+
+      default:
+
+        welcome();
+        process.exitCode = 1;
+
+    }
+
+
+  } catch (error) {
+
+
+    if (error instanceof DarkError) {
+
+      console.error(
+        error.format()
+      );
+
+
+    } else {
+
+      console.error(
+        `\n${paint('31', 'ERROR:')} I couldn't finish this.\n\n` +
+        `${paint('32', 'FIX:')} ${error.message}`
+      );
+
+    }
+
+
+    process.exitCode = 1;
+
+  }
+
+
+})();
